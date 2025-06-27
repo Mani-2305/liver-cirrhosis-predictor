@@ -5,5 +5,5 @@ The "Flask" folder contains the
   "Templates" folder which Html file is uploaded
    and app.py, normalizer.pkl, rf_stage.pkl is also in flask folder
        
-The "Training" folder conatins the moderl which is trained with the dataset.
+The "Training" folder conatins the model which is trained with the dataset.
 
