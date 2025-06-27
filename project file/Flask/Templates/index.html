@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liver Cirrhosis Stage Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 1.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-sky-900 to-blue-500 min-h-screen flex items-center justify-center py-10 px-4">
+    <div class="w-full max-w-4xl bg-white/10 backdrop-blur-md shadow-xl rounded-2xl p-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-white text-center mb-8">🩺 Liver Cirrhosis Stage Predictor</h1>
+
+        <form action="/" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-6" id="predictionForm">
+            {% set labels = [
+                "N_Days", "Age", "Sex", "Ascites", "Hepatomegaly",
+                "Spiders", "Edema", "Bilirubin", "Cholesterol", "Albumin",
+                "Copper", "Alk_Phos", "SGOT", "Triglycerides", "Platelets",
+                "Prothrombin", "Stage"
+            ] %}
+
+            {% set tooltips = [
+                "Number of days since diagnosis", "Patient's age", "0 = Female, 1 = Male", "Presence of Ascites (0/1)", "Presence of Hepatomegaly (0/1)",
+                "Presence of Spider veins (0/1)", "Presence of Edema (0/1)", "Total Bilirubin level", "Cholesterol level", "Albumin concentration",
+                "Copper levels", "Alkaline Phosphatase", "SGOT enzyme levels", "Triglyceride levels", "Platelet count",
+                "Prothrombin time", "Staging info (optional)"
+            ] %}
+
+            {% for i in range(17) %}
+                <div class="flex flex-col">
+                    <label class="text-white font-medium mb-1" for="f{{ i+1 }}">{{ labels[i] }}</label>
+                    {% if i == 2 %}  {# Sex dropdown #}
+                        <select name="f{{ i+1 }}" class="bg-white/80 text-gray-800 rounded-lg px-3 py-2" required>
+                            <option value="" disabled selected>Select Gender</option>
+                            <option value="0" {% if request.form.get('f3') == '0' %}selected{% endif %}>Female</option>
+                            <option value="1" {% if request.form.get('f3') == '1' %}selected{% endif %}>Male</option>
+                        </select>
+                    {% else %}
+                        <input 
+                            name="f{{ i+1 }}" 
+                            type="number" 
+                            step="0.0001" 
+                            min="0" 
+                            max="9999"
+                            list="history{{ i+1 }}" 
+                            value="" 
+                            placeholder="Enter value" 
+                            title="{{ tooltips[i] }}"
+                            class="bg-white/80 text-gray-800 rounded-lg px-3 py-2"
+                        >
+                        <datalist id="history{{ i+1 }}"></datalist>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="col-span-full flex flex-wrap justify-between items-center mt-4 gap-4">
+                <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-6 rounded-lg font-semibold transition-all">
+                    Predict Stage
+                </button>
+                <button type="button" onclick="clearForm()" class="bg-red-500 hover:bg-red-600 text-white py-2 px-6 rounded-lg font-semibold transition-all">
+                    Clear Fields
+                </button>
+            </div>
+        </form>
+
+        {% if prediction_text %}
+            {% set color_map = {'Stage 1': 'bg-green-500', 'Stage 2': 'bg-yellow-500', 'Stage 3': 'bg-red-600'} %}
+            {% set stage_num = prediction_text.split()[3] %}
+            {% set result_color = color_map.get('Stage ' ~ stage_num, 'bg-white/20') %}
+            <div class="mt-10 p-6 rounded-xl text-center text-white shadow-inner fade-in {{ result_color }}">
+                <h2 class="text-xl font-bold mb-2">{{ prediction_text }}</h2>
+                <p class="text-md">{{ description_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+    function clearForm() {
+        document.getElementById('predictionForm').reset();
+        // Optional: Clear datalist selections too
+        document.querySelectorAll('datalist').forEach(dl => dl.innerHTML = '');
+    }
+
+    // Input history tracking with localStorage
+    document.querySelectorAll('input[list]').forEach(input => {
+        const key = 'history_' + input.name;
+        const list = document.getElementById(input.getAttribute('list'));
+        const history = JSON.parse(localStorage.getItem(key) || '[]');
+
+        history.forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            list.appendChild(opt);
+        });
+
+        input.addEventListener('change', () => {
+            const val = input.value;
+            if (val && !history.includes(val)) {
+                history.push(val);
+                localStorage.setItem(key, JSON.stringify(history));
+            }
+        });
+    });
+
+    // Auto-scroll to result section (if available) after form submission
+    window.onload = function () {
+        const result = document.querySelector('.fade-in');
+        if (result) {
+            result.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+</script>
+
+</body>
+</html>
